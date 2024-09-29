@@ -126,6 +126,8 @@ saveImg.addEventListener("click", () => {
     link.click(); // clicking link to download image
 });
 
+const loadImageBtn = document.querySelector("#load-image");
+
 loadImageBtn.addEventListener("click", () => {
     imageLoader.click(); // Butona tıklandığında gizli input'u tetikleyin
 });
