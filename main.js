@@ -7,6 +7,7 @@ colorPicker = document.querySelector("#color-picker"),
 clearCanvas = document.querySelector(".clear-canvas"),
 saveImg = document.querySelector(".save-img"),
 ctx = canvas.getContext("2d");
+const imageLoader = document.querySelector("#image-loader");
 
 // global variables with default value
 let prevMouseX, prevMouseY, snapshot,
@@ -124,6 +125,30 @@ saveImg.addEventListener("click", () => {
     link.href = canvas.toDataURL(); // passing canvasData as link href value
     link.click(); // clicking link to download image
 });
+
+const loadImageBtn = document.querySelector("#load-image");
+
+loadImageBtn.addEventListener("click", () => {
+    imageLoader.click(); // Butona tıklandığında gizli input'u tetikleyin
+});
+
+imageLoader.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    const reader = new FileReader();
+
+    reader.onload = () => {
+        const img = new Image();
+        img.src = reader.result;
+        img.onload = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // Önceki resmi temizle
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height); // Yeni resmi çiz
+        }
+    }
+    if (file) {
+        reader.readAsDataURL(file);
+    }
+});
+
 
 canvas.addEventListener("mousedown", startDraw);
 canvas.addEventListener("mousemove", drawing);
