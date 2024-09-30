@@ -1,155 +1,439 @@
+// main.js
+
+// HTML Elementlerini Seçme
 const canvas = document.querySelector("canvas"),
-toolBtns = document.querySelectorAll(".tool"),
-fillColor = document.querySelector("#fill-color"),
-sizeSlider = document.querySelector("#size-slider"),
-colorBtns = document.querySelectorAll(".colors .option"),
-colorPicker = document.querySelector("#color-picker"),
-clearCanvas = document.querySelector(".clear-canvas"),
-saveImg = document.querySelector(".save-img"),
-ctx = canvas.getContext("2d");
-const imageLoader = document.querySelector("#image-loader");
+  toolBtns = document.querySelectorAll(".tool"),
+  fillColor = document.querySelector("#fill-color"),
+  sizeSlider = document.querySelector("#size-slider"),
+  colorBtns = document.querySelectorAll(".colors .option"),
+  colorPicker = document.querySelector("#color-picker"),
+  clearCanvasBtn = document.querySelector(".clear-canvas"),
+  saveImgBtn = document.querySelector(".save-img"),
+  loadImageBtn = document.querySelector("#load-image"),
+  imageLoader = document.querySelector("#image-loader"),
+  textToolBtn = document.querySelector("#text-tool"),
+  textModal = document.querySelector("#text-modal"),
+  textInput = document.querySelector("#text-input"),
+  addTextBtn = document.querySelector("#add-text"),
+  closeModalBtn = document.querySelector("#close-modal");
 
-// global variables with default value
-let prevMouseX, prevMouseY, snapshot,
-isDrawing = false,
-selectedTool = "brush",
-brushWidth = 5,
-selectedColor = "#000";
+const boldStyleCheckbox = document.querySelector("#bold-style");
+const italicStyleCheckbox = document.querySelector("#italic-style");
+const underlineStyleCheckbox = document.querySelector("#underline-style");
+const strikethroughStyleCheckbox = document.querySelector("#strikethrough-style");
 
+// Canvas ve Çizim Ayarları
+const ctx = canvas.getContext("2d");
+let isDrawing = false,
+  brushWidth = 5,
+  selectedTool = "brush",
+  selectedColor = "#000",
+  prevMouseX,
+  prevMouseY,
+  snapshot,
+  draggingText = null,
+  textPosition = { x: 0, y: 0 },
+  textSize = 20,
+  addedTexts = [],
+  shapes = [];
+
+// Canvas Arka Planını Ayarlama
 const setCanvasBackground = () => {
-    // setting whole canvas background to white, so the downloaded img background will be white
-    ctx.fillStyle = "#fff";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = selectedColor; // setting fillstyle back to the selectedColor, it'll be the brush color
-}
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = selectedColor;
+};
 
+// Sayfa Yüklendiğinde Canvas Boyutunu Ayarla
 window.addEventListener("load", () => {
-    // setting canvas width/height.. offsetwidth/height returns viewable width/height of an element
-    canvas.width = canvas.offsetWidth;
-    canvas.height = canvas.offsetHeight;
-    setCanvasBackground();
+  canvas.width = canvas.offsetWidth;
+  canvas.height = canvas.offsetHeight;
+  setCanvasBackground();
 });
 
-const drawRect = (e) => {
-    // if fillColor isn't checked draw a rect with border else draw rect with background
-    if(!fillColor.checked) {
-        // creating circle according to the mouse pointer
-        return ctx.strokeRect(e.offsetX, e.offsetY, prevMouseX - e.offsetX, prevMouseY - e.offsetY);
+// Canvas'ı Temizleme Fonksiyonu
+const clearCanvas = () => {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  setCanvasBackground();
+  addedTexts = [];
+  shapes = [];
+};
+
+clearCanvasBtn.addEventListener("click", clearCanvas);
+
+// Şekil Çizim Fonksiyonu
+const drawShape = (x, y, type) => {
+  ctx.beginPath();
+  const width = x - prevMouseX;
+  const height = y - prevMouseY;
+
+  if (type === "rectangle") {
+    if (fillColor.checked) {
+      ctx.fillStyle = selectedColor;
+      ctx.fillRect(prevMouseX, prevMouseY, width, height);
     }
-    ctx.fillRect(e.offsetX, e.offsetY, prevMouseX - e.offsetX, prevMouseY - e.offsetY);
+    ctx.strokeStyle = selectedColor;
+    ctx.lineWidth = brushWidth;
+    ctx.strokeRect(prevMouseX, prevMouseY, width, height);
+  } else if (type === "circle") {
+    const radius = Math.sqrt(width * width + height * height);
+    ctx.arc(prevMouseX, prevMouseY, radius, 0, Math.PI * 2, false);
+    if (fillColor.checked) {
+      ctx.fillStyle = selectedColor;
+      ctx.fill();
+    }
+    ctx.strokeStyle = selectedColor;
+    ctx.lineWidth = brushWidth;
+    ctx.stroke();
+  } else if (type === "triangle") {
+    ctx.moveTo(prevMouseX, prevMouseY);
+    ctx.lineTo(x, y);
+    ctx.lineTo(prevMouseX * 2 - x, y);
+    ctx.closePath();
+    if (fillColor.checked) {
+      ctx.fillStyle = selectedColor;
+      ctx.fill();
+    }
+    ctx.strokeStyle = selectedColor;
+    ctx.lineWidth = brushWidth;
+    ctx.stroke();
+  } else if (type === "heart") {
+    // Kalp Şekli Çizimi
+    const topCurveHeight = height / 2; // Üst kavis yüksekliği
+    const bottomPointHeight = prevMouseY + height; // Kalbin alt sivri noktası
+    const halfWidth = width / 2; // Kalbin yarı genişliği
+
+    ctx.beginPath(); // Yeni bir yol başlat
+    ctx.moveTo(prevMouseX, prevMouseY + topCurveHeight);
+
+    // Sol üst kavis
+    ctx.bezierCurveTo(
+        prevMouseX, prevMouseY - topCurveHeight, // Sol üst kontrol noktası
+        prevMouseX - halfWidth, prevMouseY - topCurveHeight, // Sol üst köşe
+        prevMouseX - halfWidth, prevMouseY + topCurveHeight // Sol alt köşe
+    );
+
+    // Alt kısmı sivriltmek için kontrol noktaları
+    ctx.bezierCurveTo(
+        prevMouseX - halfWidth, bottomPointHeight, // Sol alt kontrol noktası
+        prevMouseX, bottomPointHeight + topCurveHeight, // Alt orta nokta (sivri nokta)
+        prevMouseX + halfWidth, bottomPointHeight // Sağ alt kontrol noktası
+    );
+
+    // Sağ üst kavis
+    ctx.bezierCurveTo(
+        prevMouseX + halfWidth, prevMouseY + topCurveHeight, // Sağ alt köşe
+        prevMouseX + halfWidth, prevMouseY - topCurveHeight, // Sağ üst kontrol noktası
+        prevMouseX, prevMouseY + topCurveHeight // Sağ üst köşe
+    );
+
+    ctx.closePath(); // Yolu kapat
+    if (fillColor.checked) {
+        ctx.fillStyle = selectedColor;
+        ctx.fill(); // İçini doldur
+    }
+    ctx.strokeStyle = selectedColor;
+    ctx.lineWidth = brushWidth;
+    ctx.stroke(); // Çizgiyi çiz
 }
 
-const drawCircle = (e) => {
-    ctx.beginPath(); // creating new path to draw circle
-    // getting radius for circle according to the mouse pointer
-    let radius = Math.sqrt(Math.pow((prevMouseX - e.offsetX), 2) + Math.pow((prevMouseY - e.offsetY), 2));
-    ctx.arc(prevMouseX, prevMouseY, radius, 0, 2 * Math.PI); // creating circle according to the mouse pointer
-    fillColor.checked ? ctx.fill() : ctx.stroke(); // if fillColor is checked fill circle else draw border circle
-}
 
-const drawTriangle = (e) => {
-    ctx.beginPath(); // creating new path to draw circle
-    ctx.moveTo(prevMouseX, prevMouseY); // moving triangle to the mouse pointer
-    ctx.lineTo(e.offsetX, e.offsetY); // creating first line according to the mouse pointer
-    ctx.lineTo(prevMouseX * 2 - e.offsetX, e.offsetY); // creating bottom line of triangle
-    ctx.closePath(); // closing path of a triangle so the third line draw automatically
-    fillColor.checked ? ctx.fill() : ctx.stroke(); // if fillColor is checked fill triangle else draw border
-}
 
-const startDraw = (e) => {
-    isDrawing = true;
-    prevMouseX = e.offsetX; // passing current mouseX position as prevMouseX value
-    prevMouseY = e.offsetY; // passing current mouseY position as prevMouseY value
-    ctx.beginPath(); // creating new path to draw
-    ctx.lineWidth = brushWidth; // passing brushSize as line width
-    ctx.strokeStyle = selectedColor; // passing selectedColor as stroke style
-    ctx.fillStyle = selectedColor; // passing selectedColor as fill style
-    // copying canvas data & passing as snapshot value.. this avoids dragging the image
-    snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
-}
+};
 
-const drawing = (e) => {
-    if(!isDrawing) return; // if isDrawing is false return from here
-    ctx.putImageData(snapshot, 0, 0); // adding copied canvas data on to this canvas
+// Araç Seçim İşlevi
+toolBtns.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelector(".options .active")?.classList.remove("active");
+    btn.classList.add("active");
+    selectedTool = btn.id;
 
-    if(selectedTool === "brush" || selectedTool === "eraser") {
-        // if selected tool is eraser then set strokeStyle to white 
-        // to paint white color on to the existing canvas content else set the stroke color to selected color
-        ctx.strokeStyle = selectedTool === "eraser" ? "#fff" : selectedColor;
-        ctx.lineTo(e.offsetX, e.offsetY); // creating line according to the mouse pointer
-        ctx.stroke(); // drawing/filling line with color
-    } else if(selectedTool === "rectangle"){
-        drawRect(e);
-    } else if(selectedTool === "circle"){
-        drawCircle(e);
+    if (selectedTool === "eraser") {
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.strokeStyle = "rgba(0,0,0,1)";
     } else {
-        drawTriangle(e);
+      ctx.globalCompositeOperation = "source-over";
+      ctx.strokeStyle = selectedColor;
     }
-}
-
-toolBtns.forEach(btn => {
-    btn.addEventListener("click", () => { // adding click event to all tool option
-        // removing active class from the previous option and adding on current clicked option
-        document.querySelector(".options .active").classList.remove("active");
-        btn.classList.add("active");
-        selectedTool = btn.id;
-    });
+  });
 });
 
-sizeSlider.addEventListener("change", () => brushWidth = sizeSlider.value); // passing slider value as brushSize
+// Çizime Başlama
+canvas.addEventListener("mousedown", (e) => {
+  isDrawing = true;
+  prevMouseX = e.offsetX;
+  prevMouseY = e.offsetY;
+  snapshot = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-colorBtns.forEach(btn => {
-    btn.addEventListener("click", () => { // adding click event to all color button
-        // removing selected class from the previous option and adding on current clicked option
-        document.querySelector(".options .selected").classList.remove("selected");
-        btn.classList.add("selected");
-        // passing selected btn background color as selectedColor value
-        selectedColor = window.getComputedStyle(btn).getPropertyValue("background-color");
-    });
+  if (selectedTool === "brush" || selectedTool === "eraser") {
+    ctx.beginPath();
+    ctx.lineWidth = brushWidth;
+    ctx.lineCap = "round";
+    if (selectedTool === "brush") {
+      ctx.strokeStyle = selectedColor;
+    } else if (selectedTool === "eraser") {
+      ctx.strokeStyle = "rgba(0,0,0,1)";
+    }
+    ctx.moveTo(prevMouseX, prevMouseY);
+  }
 });
 
+// Çizim Yapma veya Şekil Çizme
+canvas.addEventListener("mousemove", (e) => {
+  if (!isDrawing) return;
+  const x = e.offsetX;
+  const y = e.offsetY;
+  ctx.putImageData(snapshot, 0, 0);
+
+  if (selectedTool === "brush" || selectedTool === "eraser") {
+    ctx.lineTo(x, y);
+    ctx.stroke();
+  } else if (
+    selectedTool === "rectangle" ||
+    selectedTool === "circle" ||
+    selectedTool === "triangle" ||
+    selectedTool === "heart"
+  ) {
+    drawShape(x, y, selectedTool);
+  }
+});
+
+// Çizimi Bitirme
+canvas.addEventListener("mouseup", () => {
+  if (isDrawing) {
+    isDrawing = false;
+    if (
+      selectedTool !== "brush" &&
+      selectedTool !== "eraser"
+    ) {
+      shapes.push({
+        tool: selectedTool,
+        x: prevMouseX,
+        y: prevMouseY,
+        color: selectedColor,
+        width: brushWidth,
+        filled: fillColor.checked,
+      });
+    }
+  }
+});
+
+// Fırça Kalınlığını Güncelleme
+sizeSlider.addEventListener("change", () => {
+  brushWidth = sizeSlider.value;
+});
+
+// Renk Seçimini Güncelleme
+colorBtns.forEach((btn) => {
+  btn.addEventListener("click", () => {
+    document.querySelector(".colors .selected")?.classList.remove("selected");
+    btn.classList.add("selected");
+    selectedColor = window.getComputedStyle(btn).getPropertyValue("background-color");
+    if (selectedTool !== "eraser") {
+      ctx.strokeStyle = selectedColor;
+    }
+  });
+});
+
+// Renk Seçici ile Renk Seçme
 colorPicker.addEventListener("change", () => {
-    // passing picked color value from color picker to last color btn background
-    colorPicker.parentElement.style.background = colorPicker.value;
-    colorPicker.parentElement.click();
+  colorPicker.parentElement.style.backgroundColor = colorPicker.value;
+  colorPicker.parentElement.click();
+  selectedColor = colorPicker.value;
+  if (selectedTool !== "eraser") {
+    ctx.strokeStyle = selectedColor;
+  }
 });
 
-clearCanvas.addEventListener("click", () => {
-    ctx.clearRect(0, 0, canvas.width, canvas.height); // clearing whole canvas
+// Metni çizme fonksiyonunu güncelle
+const drawText = (text, x, y, font = "20px Poppins") => {
+    ctx.font = font;
+    ctx.fillStyle = selectedColor; // Metin rengini güncelle
+  
+    // Metin stilini uygula
+    let fontWeight = boldStyleCheckbox.checked ? "bold" : "normal";
+    let fontStyle = italicStyleCheckbox.checked ? "italic" : "normal";
+    ctx.font = `${fontStyle} ${fontWeight} ${textSize}px Poppins`;
+  
+    ctx.fillText(text, x, y);
+  
+    // Eğer altı çizili veya üstü çizili ise çizgi ekle
+    if (underlineStyleCheckbox.checked) {
+      ctx.beginPath();
+      ctx.moveTo(x, y + 5); // Altı çizili mesafesi
+      ctx.lineTo(x + ctx.measureText(text).width, y + 5);
+      ctx.strokeStyle = selectedColor;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+  
+    if (strikethroughStyleCheckbox.checked) {
+      ctx.beginPath();
+      ctx.moveTo(x, y - textSize / 3); // Üstü çizili mesafesi
+      ctx.lineTo(x + ctx.measureText(text).width, y - textSize / 3);
+      ctx.strokeStyle = selectedColor;
+      ctx.lineWidth = 2;
+      ctx.stroke();
+    }
+  };
+  
+  // Metni ekleme işlemi (stil ile birlikte)
+  addTextBtn.addEventListener("click", () => {
+    const text = textInput.value;
+    if (text) {
+      textPosition.x = canvas.width / 2 - 50;
+      textPosition.y = canvas.height / 2;
+      addedTexts.push({ text: text, x: textPosition.x, y: textPosition.y });
+      
+      // Metni seçilen stillerle çiz
+      drawText(text, textPosition.x, textPosition.y);
+      
+      textModal.style.display = "none";
+      textInput.value = "";
+    }
+  });
+
+// Metin Ekleme
+addTextBtn.addEventListener("click", () => {
+  const text = textInput.value.trim();
+  if (text) {
+    textPosition.x = canvas.width / 2 - 50;
+    textPosition.y = canvas.height / 2;
+    addedTexts.push({ text, x: textPosition.x, y: textPosition.y });
+    drawText(text, textPosition.x, textPosition.y);
+    textModal.style.display = "none";
+    textInput.value = "";
+  }
+});
+
+// Metin Aracına Tıklanınca Modalı Açma
+textToolBtn.addEventListener("click", () => {
+  textModal.style.display = "block";
+});
+
+// Metin Modalını Kapatma
+closeModalBtn.addEventListener("click", () => {
+  textModal.style.display = "none";
+});
+
+// Metin Sürükleme İşlevi
+canvas.addEventListener("mousedown", (e) => {
+  const mouseX = e.offsetX;
+  const mouseY = e.offsetY;
+
+  addedTexts.forEach((textObj) => {
+    const textWidth = ctx.measureText(textObj.text).width;
+    const textHeight = textSize;
+
+    if (
+      mouseX >= textObj.x &&
+      mouseX <= textObj.x + textWidth &&
+      mouseY >= textObj.y - textHeight &&
+      mouseY <= textObj.y
+    ) {
+      draggingText = textObj;
+    }
+  });
+});
+
+canvas.addEventListener("mousemove", (e) => {
+  if (draggingText) {
+    const mouseX = e.offsetX;
+    const mouseY = e.offsetY;
+
+    draggingText.x = mouseX;
+    draggingText.y = mouseY;
+
+    // Canvas'ı Yeniden Çizme
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     setCanvasBackground();
+
+    // Eklenen Tüm Metinleri Çizme
+    addedTexts.forEach((textObj) => {
+      drawText(textObj.text, textObj.x, textObj.y);
+    });
+
+    // Çizilen Tüm Şekilleri Çizme
+    shapes.forEach((shape) => {
+      drawShape(shape.x, shape.y, shape.tool);
+    });
+  }
 });
 
-saveImg.addEventListener("click", () => {
-    const link = document.createElement("a"); // creating <a> element
-    link.download = `${Date.now()}.jpg`; // passing current date as link download value
-    link.href = canvas.toDataURL(); // passing canvasData as link href value
-    link.click(); // clicking link to download image
+canvas.addEventListener("mouseup", () => {
+  draggingText = null;
 });
 
-const loadImageBtn = document.querySelector("#load-image");
+// Metni Çift Tıklayarak Düzenleme
+canvas.addEventListener("dblclick", (e) => {
+  const mouseX = e.offsetX;
+  const mouseY = e.offsetY;
 
+  addedTexts.forEach((textObj) => {
+    const textWidth = ctx.measureText(textObj.text).width;
+    const textHeight = textSize;
+
+    if (
+      mouseX >= textObj.x &&
+      mouseX <= textObj.x + textWidth &&
+      mouseY >= textObj.y - textHeight &&
+      mouseY <= textObj.y
+    ) {
+      textModal.style.display = "block";
+      textInput.value = textObj.text;
+
+      // Mevcut Metni Güncelleme
+      addTextBtn.onclick = () => {
+        const newText = textInput.value.trim();
+        if (newText) {
+          textObj.text = newText;
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          setCanvasBackground();
+
+          addedTexts.forEach((txt) => {
+            drawText(txt.text, txt.x, txt.y);
+          });
+
+          shapes.forEach((shape) => {
+            drawShape(shape.x, shape.y, shape.tool);
+          });
+
+          textModal.style.display = "none";
+          textInput.value = "";
+        }
+      };
+    }
+  });
+});
+
+// Silgi (Eraser) İşlevi
+// Silgi aracı seçildiğinde, globalCompositeOperation 'destination-out' olarak ayarlanır.
+// Bu, çizilen her şeyin mevcut içerikten silinmesini sağlar.
+
+// Resim Yükleme
 loadImageBtn.addEventListener("click", () => {
-    imageLoader.click(); // Butona tıklandığında gizli input'u tetikleyin
+  imageLoader.click();
 });
 
 imageLoader.addEventListener("change", (e) => {
-    const file = e.target.files[0];
-    const reader = new FileReader();
-
-    reader.onload = () => {
-        const img = new Image();
-        img.src = reader.result;
-        img.onload = () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height); // Önceki resmi temizle
-            ctx.drawImage(img, 0, 0, canvas.width, canvas.height); // Yeni resmi çiz
-        }
-    }
-    if (file) {
-        reader.readAsDataURL(file);
-    }
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function (event) {
+    const img = new Image();
+    img.src = event.target.result;
+    img.onload = function () {
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    };
+  };
+  reader.readAsDataURL(file);
 });
 
-
-canvas.addEventListener("mousedown", startDraw);
-canvas.addEventListener("mousemove", drawing);
-canvas.addEventListener("mouseup", () => isDrawing = false);
+// Fotoğrafı Kaydetme
+saveImgBtn.addEventListener("click", () => {
+  const dataURL = canvas.toDataURL("image/png");
+  const a = document.createElement("a");
+  a.href = dataURL;
+  a.download = "canvas.png";
+  a.click();
+});

@@ -156,3 +156,90 @@ section {
   cursor: pointer;
   margin-bottom: 10px;
 }
+
+/* Modal Tasarımı */
+.modal {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  padding: 30px;
+  border-radius: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  z-index: 100;
+  width: 300px;
+  max-width: 100%;
+}
+
+.modal h3 {
+  text-align: center;
+  font-size: 1.5rem;
+  margin-bottom: 15px;
+}
+
+#text-input {
+  width: 100%;
+  padding: 10px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 15px;
+}
+
+/* Metin Stili Seçenekleri */
+.text-style-options {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.text-style-options label {
+  display: flex;
+  align-items: center;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.text-style-options input {
+  margin-right: 5px;
+}
+
+#add-text,
+#close-modal {
+  width: 100%;
+  padding: 10px;
+  font-size: 1rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#add-text {
+  background-color: #4a98f7;
+  color: white;
+  margin-bottom: 10px;
+  transition: background-color 0.3s ease;
+}
+
+#add-text:hover {
+  background-color: #417dcf;
+}
+
+#close-modal {
+  background-color: #6c757d;
+  color: white;
+}
+
+#close-modal:hover {
+  background-color: #5a6168;
+}
+
+#text-input {
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+#text-style {
+  margin-bottom: 10px;
+}

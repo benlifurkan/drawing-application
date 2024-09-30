@@ -6,6 +6,10 @@
     <title>Drawing App JavaScript | benli.dev</title>
     <link rel="stylesheet" href="style.css" />
     <link rel="shortcut icon" href="icons/brush.svg" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"
+    />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <script src="main.js" defer></script>
   </head>
@@ -27,12 +31,21 @@
               <img src="icons/triangle.svg" alt="" />
               <span>Üçgen</span>
             </li>
+            <li class="option tool" id="heart">
+              <img width="17px" height="15px" src="icons/heart.svg" alt="" />
+              <span>Kalp</span>
+            </li>
+            <li class="option tool" id="text-tool">
+              <img src="icons/text_field.svg" alt="" />
+              <span>Metin Ekle</span>
+            </li>
             <li class="option">
               <input type="checkbox" id="fill-color" />
               <label for="fill-color">Dolgu Rengi</label>
             </li>
           </ul>
         </div>
+
         <div class="row">
           <label class="title">Ayarlar</label>
           <ul class="options">
@@ -78,6 +91,38 @@
       <section class="drawing-board">
         <canvas></canvas>
       </section>
+
+      <!-- Metin Ekleme Modalı -->
+      <div id="text-modal" class="modal" style="display: none">
+        <h3>Metin Ekle</h3>
+        <input id="text-input" type="text" placeholder="Metni yazın..." />
+
+        <!-- Metin Stili Seçenekleri -->
+        <div
+          class="text-style-options"
+          style="margin: flex; flex-direction: column"
+        >
+          <label>
+            <input type="checkbox" id="bold-style" />
+            <span>Kalın</span>
+          </label>
+          <label>
+            <input type="checkbox" id="italic-style" />
+            <span>İtalik</span>
+          </label>
+          <label>
+            <input type="checkbox" id="underline-style" />
+            <span>Altı Çizili</span>
+          </label>
+          <label>
+            <input type="checkbox" id="strikethrough-style" />
+            <span>Üstü Çizili</span>
+          </label>
+        </div>
+
+        <button id="add-text">Metni Ekle</button>
+        <button id="close-modal">Kapat</button>
+      </div>
     </div>
   </body>
 </html>
